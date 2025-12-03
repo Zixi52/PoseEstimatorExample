@@ -6,6 +6,7 @@ package frc.robot;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.XboxController;
@@ -20,9 +21,15 @@ public class Robot extends TimedRobot {
   private final SlewRateLimiter m_rotLimiter = new SlewRateLimiter(3);
 
   // Mini-autonomous target (meters and degrees)
-  private final double targetX = 2.0;
-  private final double targetY = 0.0;
+  private final double targetX = 3.0;
+  private final double targetY = 3.5;
   private final double targetAngle = 0.0;
+
+  private final double obstacleX = 1.5;
+  private final double obstacleY = 1.75;
+  private final double obstacleRadius = 0.2;
+
+  private final double kAvoid = 0.5;
 
   /** Converts current pose into x/y/rotation speeds toward target. */
   private ChassisSpeeds calculateAutoSpeeds(Pose2d pose) {
@@ -50,15 +57,32 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     // 1. Update odometry (includes vision)
+    m_swerve.updateOdometry();
 
-    // 2. Get the current estimated pose and store in a variable
+    // 2. Get the current estimated pose and store in a Pose2d variable
+    Pose2d currentPose = m_swerve.getPose();
 
-    // 3. Calculate speeds toward the target and store in a ChassisSpeeds variable called speeds
+    // 3. Calculate speeds toward the target
+    ChassisSpeeds speeds = calculateAutoSpeeds(currentPose);
 
-    // 4. Drive the robot toward the target, already written for you
+    // 4. Calculate distance to obstacle
+    double distanceToObstacle = currentPose.getTranslation().getDistance(
+      new Translation2d(obstacleX, obstacleY)
+    );
+
+    // 5. Calculate the additional speeds necessary to avoid obstacle
+    double avoidX = 0;
+    double avoidY = 0;
+    if (distanceToObstacle < obstacleRadius) {
+      // Push away from obstacle
+      avoidX = kAvoid * (currentPose.getX() - obstacleX);
+      avoidY = kAvoid * (currentPose.getY() - obstacleY);
+    }
+
+    // 6. Drive the robot toward the target (field-relative)
     m_swerve.drive(
-        speeds.vxMetersPerSecond,
-        speeds.vyMetersPerSecond,
+        speeds.vxMetersPerSecond + avoidX,
+        speeds.vyMetersPerSecond + avoidY,
         speeds.omegaRadiansPerSecond,
         true,
         getPeriod()
