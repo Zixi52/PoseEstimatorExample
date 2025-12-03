@@ -50,15 +50,12 @@ public class Robot extends TimedRobot {
   @Override
   public void autonomousPeriodic() {
     // 1. Update odometry (includes vision)
-    m_swerve.updateOdometry();
 
-    // 2. Get the current estimated pose
-    Pose2d currentPose = m_swerve.getPose();
+    // 2. Get the current estimated pose and store in a variable
 
-    // 3. Calculate speeds toward the target
-    ChassisSpeeds speeds = calculateAutoSpeeds(currentPose);
+    // 3. Calculate speeds toward the target and store in a ChassisSpeeds variable called speeds
 
-    // 4. Drive the robot toward the target (field-relative)
+    // 4. Drive the robot toward the target, already written for you
     m_swerve.drive(
         speeds.vxMetersPerSecond,
         speeds.vyMetersPerSecond,
